@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Example macOS LaunchAgent that keeps `codexbar serve` running.
+     Copy to ~/Library/LaunchAgents/com.codexbar.serve.plist, replace the
+     token, then: launchctl load ~/Library/LaunchAgents/com.codexbar.serve.plist
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key><string>com.codexbar.serve</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/opt/homebrew/bin/codexbar</string>
+        <string>serve</string>
+        <string>--host</string><string>0.0.0.0</string>
+        <string>--port</string><string>8080</string>
+        <string>--allow-plain-http</string>
+        <string>--request-timeout</string><string>90</string>
+    </array>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>CODEXBAR_DASHBOARD_TOKEN</key>
+        <string>REPLACE_WITH_RANDOM_TOKEN</string>
+    </dict>
+    <key>RunAtLoad</key><true/>
+    <key>KeepAlive</key><true/>
+    <key>StandardOutPath</key><string>/tmp/codexbar-serve.log</string>
+    <key>StandardErrorPath</key><string>/tmp/codexbar-serve.log</string>
+</dict>
+</plist>

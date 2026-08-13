@@ -1,0 +1,12 @@
+{
+  "domain": "codexbar",
+  "name": "CodexBar",
+  "codeowners": ["@stijnhoste"],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/stijnhoste/ha-codexbar",
+  "integration_type": "service",
+  "iot_class": "cloud_polling",
+  "requirements": [],
+  "version": "1.0.0"
+}

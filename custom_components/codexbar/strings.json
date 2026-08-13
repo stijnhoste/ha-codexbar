@@ -1,0 +1,25 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to CodexBar",
+        "description": "Point Home Assistant at your running `codexbar serve` instance.",
+        "data": {
+          "host": "Host (base URL)",
+          "token": "Dashboard token"
+        },
+        "data_description": {
+          "host": "Base URL of `codexbar serve`, e.g. http://127.0.0.1:8080",
+          "token": "The value of CODEXBAR_DASHBOARD_TOKEN (bare token or `Bearer ...`)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to the CodexBar server",
+      "invalid_auth": "Invalid dashboard token"
+    },
+    "abort": {
+      "already_configured": "CodexBar is already configured"
+    }
+  }
+}

@@ -4,7 +4,7 @@ from datetime import timedelta
 
 DOMAIN = "codexbar"
 
-DEFAULT_SCAN_INTERVAL = timedelta(minutes=10)
+DEFAULT_SCAN_INTERVAL = timedelta(minutes=1)
 SNAPSHOT_PATH = "/dashboard/v1/snapshot"
 
 CONF_HOST = "host"

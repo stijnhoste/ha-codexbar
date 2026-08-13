@@ -18,8 +18,16 @@
       "cannot_connect": "Failed to connect to the CodexBar server",
       "invalid_auth": "Invalid dashboard token"
     },
-    "abort": {
-      "already_configured": "CodexBar is already configured"
+    "create_entry": {
+      "default": "CodexBar is connected.\n\nUse this webhook URL as the destination for CodexBar hook rules:\n\n`{webhook_url}`\n\nTreat this URL as a password. You can view it again from the integration's Configure dialog."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "CodexBar hook URL",
+        "description": "Send CodexBar hook JSON with an HTTP POST to:\n\n`{webhook_url}`\n\nTreat this URL as a password."
+      }
     }
   }
 }

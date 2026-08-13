@@ -16,6 +16,11 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, SNAPSHOT_PATH
+from .snapshot import (
+    SnapshotValidationError,
+    snapshot_is_stale,
+    validate_snapshot,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -27,6 +32,7 @@ class CodexBarCoordinator(DataUpdateCoordinator):
         """Initialize the coordinator."""
         self.host = host.rstrip("/")
         self.token = token
+        self.snapshot_stale = False
         super().__init__(
             hass,
             _LOGGER,
@@ -48,8 +54,21 @@ class CodexBarCoordinator(DataUpdateCoordinator):
                 if resp.status == 401:
                     raise UpdateFailed("Invalid dashboard token (HTTP 401)")
                 resp.raise_for_status()
-                return await resp.json()
+                payload = await resp.json()
         except UpdateFailed:
             raise
-        except (aiohttp.ClientError, TimeoutError) as err:
+        except (aiohttp.ClientError, TimeoutError, ValueError) as err:
             raise UpdateFailed(f"Error fetching CodexBar data: {err}") from err
+
+        try:
+            data = validate_snapshot(payload)
+        except SnapshotValidationError as err:
+            raise UpdateFailed(f"Invalid CodexBar dashboard snapshot: {err}") from err
+
+        self.snapshot_stale = snapshot_is_stale(data)
+        if self.snapshot_stale:
+            _LOGGER.warning(
+                "CodexBar returned a stale dashboard snapshot generated at %s",
+                data["generatedAt"],
+            )
+        return data

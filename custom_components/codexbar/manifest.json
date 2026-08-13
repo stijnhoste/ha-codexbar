@@ -3,11 +3,11 @@
   "name": "CodexBar",
   "codeowners": ["@stijnhoste"],
   "config_flow": true,
-  "dependencies": [],
+  "dependencies": ["webhook"],
   "documentation": "https://github.com/stijnhoste/ha-codexbar",
   "integration_type": "service",
-  "iot_class": "cloud_polling",
+  "iot_class": "local_polling",
   "issue_tracker": "https://github.com/stijnhoste/ha-codexbar/issues",
   "requirements": [],
-  "version": "1.0.0"
+  "version": "1.1.0"
 }

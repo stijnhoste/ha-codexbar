@@ -30,6 +30,7 @@ from homeassistant.util import slugify
 
 from .const import COST_ROUND, CREDITS_ROUND, DOMAIN, PERCENT_ROUND
 from .coordinator import CodexBarCoordinator
+from .snapshot import provider_error_attributes, provider_status_value
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -124,7 +125,10 @@ def _provider_specs(provider: dict) -> list[Spec]:
                 pid,
                 f"{key}_used",
                 f"{base} Used",
-                lambda p, k=kind, l=label: _round(_window_getter(k, l, "usedPercent")(p), PERCENT_ROUND),
+                lambda p, k=kind, window_label=label: _round(
+                    _window_getter(k, window_label, "usedPercent")(p),
+                    PERCENT_ROUND,
+                ),
                 state_class=SensorStateClass.MEASUREMENT,
                 native_unit=PERCENTAGE,
             )
@@ -134,7 +138,10 @@ def _provider_specs(provider: dict) -> list[Spec]:
                 pid,
                 f"{key}_remaining",
                 f"{base} Remaining",
-                lambda p, k=kind, l=label: _round(_window_getter(k, l, "remainingPercent")(p), PERCENT_ROUND),
+                lambda p, k=kind, window_label=label: _round(
+                    _window_getter(k, window_label, "remainingPercent")(p),
+                    PERCENT_ROUND,
+                ),
                 state_class=SensorStateClass.MEASUREMENT,
                 native_unit=PERCENTAGE,
             )
@@ -144,7 +151,9 @@ def _provider_specs(provider: dict) -> list[Spec]:
                 pid,
                 f"{key}_resets_at",
                 f"{base} Resets At",
-                lambda p, k=kind, l=label: _parse_ts(_window_getter(k, l, "resetAt")(p)),
+                lambda p, k=kind, window_label=label: _parse_ts(
+                    _window_getter(k, window_label, "resetAt")(p)
+                ),
                 device_class=SensorDeviceClass.TIMESTAMP,
             )
         )
@@ -153,7 +162,9 @@ def _provider_specs(provider: dict) -> list[Spec]:
                 pid,
                 f"{key}_resets_at_date",
                 f"{base} Resets At (date)",
-                lambda p, k=kind, l=label: _absolute(_window_getter(k, l, "resetAt")(p)),
+                lambda p, k=kind, window_label=label: _absolute(
+                    _window_getter(k, window_label, "resetAt")(p)
+                ),
             )
         )
 
@@ -164,7 +175,9 @@ def _provider_specs(provider: dict) -> list[Spec]:
                 pid,
                 "credits",
                 f"{name} Credits",
-                lambda p: _round((p.get("credits") or {}).get("remaining"), CREDITS_ROUND),
+                lambda p: _round(
+                    (p.get("credits") or {}).get("remaining"), CREDITS_ROUND
+                ),
                 state_class=SensorStateClass.MEASUREMENT,
                 native_unit=credits.get("unit"),
                 icon="mdi:ticket-percent",
@@ -190,23 +203,24 @@ def _provider_specs(provider: dict) -> list[Spec]:
                 pid,
                 "cost_30d",
                 f"{name} Cost 30d",
-                lambda p: _round((p.get("cost") or {}).get("last30DaysUSD"), COST_ROUND),
+                lambda p: _round(
+                    (p.get("cost") or {}).get("last30DaysUSD"), COST_ROUND
+                ),
                 state_class=SensorStateClass.MEASUREMENT,
                 native_unit="USD",
                 icon="mdi:cash",
             )
         )
 
-    status = provider.get("status") or {}
-    if status.get("label"):
-        specs.append(
-            Spec(
-                pid,
-                "status",
-                f"{name} Status",
-                lambda p: (p.get("status") or {}).get("label"),
-            )
+    specs.append(
+        Spec(
+            pid,
+            "status",
+            f"{name} Status",
+            provider_status_value,
+            icon="mdi:server-network",
         )
+    )
 
     return specs
 
@@ -246,16 +260,36 @@ class CodexBarSensor(CoordinatorEntity, SensorEntity):
         return self._spec.value_fn(provider)
 
     @property
+    def available(self) -> bool:
+        """Return whether this sensor has current provider data."""
+        if not super().available or self.coordinator.snapshot_stale:
+            return False
+        provider = self._provider()
+        if provider is None:
+            return False
+        if self._spec.key == "status":
+            return True
+        return self._spec.value_fn(provider) is not None
+
+    @property
     def extra_state_attributes(self) -> dict[str, Any]:
         provider = self._provider()
         if provider is None:
             return {}
         identity = provider.get("identity") or {}
-        attrs: dict[str, Any] = {"provider": self._provider_id}
+        data = self.coordinator.data or {}
+        attrs: dict[str, Any] = {
+            "provider": self._provider_id,
+            "snapshot_generated_at": data.get("generatedAt"),
+            "snapshot_stale": self.coordinator.snapshot_stale,
+        }
         if identity.get("accountEmail"):
             attrs["account"] = identity["accountEmail"]
         if provider.get("source"):
             attrs["source"] = provider["source"]
+        if provider.get("updatedAt"):
+            attrs["provider_updated_at"] = provider["updatedAt"]
+        attrs.update(provider_error_attributes(provider))
         return attrs
 
 
@@ -282,6 +316,13 @@ class CodexBarSensorManager:
                 continue
             for spec in _provider_specs(provider):
                 desired[spec.unique_id] = spec
+            if provider.get("error") is not None:
+                provider_id = provider.get("id") or slugify(
+                    provider.get("name") or "provider"
+                )
+                for unique_id, entity in self._entities.items():
+                    if entity._provider_id == provider_id:
+                        desired.setdefault(unique_id, entity._spec)
         return desired
 
     def reconcile(self, *_args) -> None:

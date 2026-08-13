@@ -11,5 +11,7 @@ jobs:
     runs-on: "ubuntu-latest"
     steps:
       - uses: actions/checkout@v4
+      - name: Unit tests
+        run: python3 -m unittest discover -s tests -v
       - name: Hassfest validation
         uses: home-assistant/actions/hassfest@master

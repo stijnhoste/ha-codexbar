@@ -3,9 +3,14 @@
 [![GitHub Release](https://img.shields.io/github/v/release/stijnhoste/ha-codexbar?style=flat-square)](https://github.com/stijnhoste/ha-codexbar/releases)
 [![hacs_badge](https://img.shields.io/badge/HACS-Default-41BDF5.svg?style=flat-square)](https://github.com/hacs/integration)
 
-Expose usage limits from [CodexBar](https://github.com/steipete/CodexBar) — the
-macOS menu bar app that tracks AI coding-provider quotas — as Home Assistant
-sensors.
+This is a Home Assistant custom integration for people who run
+[CodexBar](https://github.com/steipete/CodexBar). It turns CodexBar's AI coding
+quota data into sensors for dashboards and automations, including usage,
+remaining quota, reset times, credits, costs, and provider status.
+
+It is a companion to CodexBar, not a standalone provider client. It does not
+sign in to OpenAI, Anthropic, or other providers. Instead, it reads the
+normalized snapshot from a running `codexbar serve` instance.
 
 Because it consumes CodexBar's **normalized dashboard snapshot**, this
 integration covers **every provider CodexBar supports** (Codex, Claude, Cursor,
